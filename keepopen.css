@@ -1,0 +1,10 @@
+body, button {
+	font-size: 20px;
+	font-family: sans-serif;
+}
+body {
+	background-color: #ded;
+}
+h1 {
+	margin-top: 0.5em;
+}

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="stylesheet" href="keepopen.css" type="text/css">
+<title>Keep Open</title>
+</head>
+<body>
+<h1>Prevent Window Closing</h1>
+<p><b>Activate Protection:</b> <button id="btnPin">Pin This Tab</button> &ndash; or &ndash; 
+	<button id="btnLeft">First Position</button> &ndash; or &ndash; <button id="btnHere">Right Here</button> </p> 
+<p><b>Not This Window:</b> <button id="btnClose">Close This Tab</button></p>
+<h2>Preference Settings</h2>
+<p>This extension requires default settings for two preferences. To check:</p>
+<ol>
+	<li>In a new tab, type or paste <strong>about:config</strong> and press Enter/Return. Click the button accepting the risk.</li>
+	<li>In the filter box, type or paste <strong>beforeun</strong> and pause while the list is filtered.</li>
+	<li>If the <strong>dom.disable_beforeunload</strong> preference is bolded and set to true, double-click it to restore the default value of false.</li>
+	<li>If the <strong>dom.require_user_interaction_for_beforeunload</strong> preference is bolded and set to false, double-click it to restore the default value of true.</li>
+</ol>
+<p>Copyright &copy; 2019 Jefferson Scher. License: Mozilla Public License 2.0.</p>
+</body>
+<script type="text/javascript" src="keepopen.js"></script>
+</html>

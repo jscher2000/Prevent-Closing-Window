@@ -1,0 +1,31 @@
+{
+	"manifest_version": 2,
+	"name": "Prevent Closing Window",
+	"description": "Displays the \"Leave Page\" prompt to avoid accidentally closing the current window.",
+	"version": "0.5",
+	"applications":{
+		"gecko": {
+			"id": "{0bd65bd5-3bba-4d89-a2a8-7bb5d057244d}",
+			"strict_min_version": "57.0"
+		}
+	},
+	"developer": {
+		"name": "Jefferson \"jscher2000\" Scher",
+		"url": "https://github.com/jscher2000/"
+	},
+	"background": {
+		"scripts": [
+			"background.js"
+		]
+	},
+	"permissions": [
+		"menus",
+		"tabs",
+		"storage"
+	],
+	"icons": {
+		"16": "icons/close-stop-16.png",
+		"32": "icons/close-stop-32.png",
+		"64": "icons/close-stop-64.png"
+	}
+}
