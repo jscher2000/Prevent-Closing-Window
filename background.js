@@ -1,9 +1,11 @@
 /* 
-  Copyright 2018. Jefferson "jscher2000" Scher. License: MPL-2.0.
+  Copyright 2019. Jefferson "jscher2000" Scher. License: MPL-2.0.
   Revision 0.1 - open pinned tab in window to alert on close
   Revision 0.2 - bug fix for slow-opening new windows
   Revision 0.3 - bug fixes
   Revision 0.4 - bug fixes
+  Revision 0.5 - tab options other than pinned
+  Revision 0.6 - toolbar button to launch a Keep Open page
 */
 
 /**** Create and populate data structure ****/
@@ -35,8 +37,8 @@ let regWins = [], privWins = [];	// window id's
 let myPage = browser.runtime.getURL('/keepopen.html');
 
 function initKeepOpen(){
-	// extension startup: if koTabs is empty, open some pinned tabs
-	console.log('Starting initKeepOpen()');
+	// extension startup: if koTabs is empty, open some tabs
+	//console.log('Starting initKeepOpen()');
 	if (koTabs.regTabs.length === 0 && koTabs.privTabs.length === 0){
 		let wins = browser.windows.getAll({populate: true});
 		wins.then((arrWins) => {
@@ -121,69 +123,10 @@ function initKeepOpen(){
 			}
 		});
 	}
-	console.log(koTabs);
+	//console.log(koTabs);
 }
 initKeepOpen();
 browser.runtime.onStartup.addListener(initKeepOpen);
-
-/* START DISABLED FOR 0.3 
-
-// Listen for window close and update regWins/privWins, regTabs/privTabs
-// Create a new pinned tab in another window if needed
-browser.windows.onRemoved.addListener((wid) => {
-	console.log('Starting windows.onRemoved.addListener() for ' + wid);
-	var iTab;
-	if (regWins.includes(wid)){
-		// remove this window from the regWins array
-		regWins.splice(regWins.indexOf(wid), 1);
-		if (oPrefs.addToEvery){ // just remove this one from our list
-			iTab = koTabs.regTabs.findIndex( oTab => oTab.win_id === wid );
-			if (iTab > -1) koTabs.regTabs.splice(iTab, 1);
-		} else { // remove this one from our list and create another one
-			iTab = koTabs.regTabs.findIndex( oTab => oTab.win_id === wid );
-			if (iTab > -1) koTabs.regTabs.splice(iTab, 1);
-			if (regWins.length > 0){
-				browser.tabs.create({
-					url: myPage,
-					pinned: false,
-					active: true,
-					windowId: regWins[0]
-				}).then((tabNew) => {
-					koTabs.regTabs.push({
-						tab_id: tabNew.id,
-						win_id: tabNew.windowId
-					});
-				})
-			}
-		}
-	}
-	if (privWins.includes(wid)){
-		// remove this window from the privWins array
-		privWins.splice(privWins.indexOf(wid), 1);
-		if (oPrefs.addToEvery){ // just remove this one from our list
-			iTab = koTabs.privTabs.findIndex( oTab => oTab.win_id === wid );
-			if (iTab > -1) koTabs.privTabs.splice(iTab, 1);
-		} else { // remove this one from our list and create another one
-			iTab = koTabs.privTabs.findIndex( oTab => oTab.win_id === wid );
-			if (iTab > -1) koTabs.privTabs.splice(iTab, 1);
-			if (privWins.length > 0){
-				browser.tabs.create({
-					url: myPage,
-					pinned: false,
-					active: true,
-					windowId: privWins[0]
-				}).then((tabNew) => {
-					koTabs.privTabs.push({
-						tab_id: tabNew.id,
-						win_id: tabNew.windowId
-					});
-				});
-			}
-		}
-	}
-	console.log(koTabs);
-});
-END DISABLED FOR 0.3 */
 
 // Listen for window created and update regWins/privWins
 // Create a new pinned tab in another window if applicable and update regTabs/privTabs
@@ -196,7 +139,7 @@ browser.windows.onCreated.addListener((win) => {
 			if (tab.incognito){
 				// add this window to the privWins array
 				privWins.push(tab.windowId);
-				// do we need to add a pinned tab?
+				// do we need to add a KO tab?
 				if (oPrefs.addToEvery || koTabs.privTabs.length === 0){
 					browser.tabs.create({
 						url: myPage,
@@ -213,7 +156,7 @@ browser.windows.onCreated.addListener((win) => {
 			} else {
 				// add this window to the regWins array
 				regWins.push(tab.windowId);
-				// do we need to add a pinned tab?
+				// do we need to add a KO tab?
 				if (oPrefs.addToEvery || koTabs.regTabs.length === 0){
 					browser.tabs.create({
 						url: myPage,
@@ -254,3 +197,41 @@ function handleMessage(request, sender, sendResponse) {
 	}
 }
 browser.runtime.onMessage.addListener(handleMessage);
+
+/**** Set up toolbar button listener ****/
+
+// Listen for button click and open a tab with the Keep Open page
+browser.browserAction.onClicked.addListener((currTab) => {
+	if (currTab.incognito){
+		// add this window to the privWins array
+		privWins.push(currTab.windowId);
+		// add a KO tab
+		browser.tabs.create({
+			url: myPage,
+			pinned: false,
+			active: true,
+			windowId: currTab.windowId
+		}).then( (tabNew) => {
+			koTabs.privTabs.push({
+				tab_id: tabNew.id,
+				win_id: tabNew.windowId
+			});
+		});
+	} else {
+		// add this window to the regWins array
+		regWins.push(currTab.windowId);
+		// add a KO tab
+		browser.tabs.create({
+			url: myPage,
+			pinned: false,
+			active: true,
+			windowId: currTab.windowId
+		}).then((tabNew) => {
+			koTabs.regTabs.push({
+				tab_id: tabNew.id,
+				win_id: tabNew.windowId
+			});
+		});
+	}
+	console.log(koTabs);
+});

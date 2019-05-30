@@ -29,7 +29,7 @@ function pinAndActivate(evt){
 						pinned: true,
 						active: false
 					});
-				});
+				}).then(function(){disableActionButtons();});
 			});
 			break;
 		case 'btnLeft':
@@ -44,7 +44,7 @@ function pinAndActivate(evt){
 					browser.tabs.move(win.tabs[0].id, {
 						index: 0
 					});
-				});
+				}).then(function(){disableActionButtons();});
 			});
 			break;
 		case 'btnHere':
@@ -54,9 +54,11 @@ function pinAndActivate(evt){
 				win.tabs.sort(function(a,b) {return (b.lastAccessed - a.lastAccessed);});
 				browser.tabs.update(win.tabs[1].id, {
 					active:true
-				});
+				}).then(function(){disableActionButtons();});
 			});
 	}
+}
+function disableActionButtons(){
 	// Disable the action buttons that triggered this event
 	document.getElementById('btnPin').setAttribute('disabled', 'disabled');
 	document.getElementById('btnPin').removeEventListener('click', pinAndActivate, false);

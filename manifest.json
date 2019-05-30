@@ -2,7 +2,7 @@
 	"manifest_version": 2,
 	"name": "Prevent Closing Window",
 	"description": "Displays the \"Leave Page\" prompt to avoid accidentally closing the current window.",
-	"version": "0.5",
+	"version": "0.6",
 	"applications":{
 		"gecko": {
 			"id": "{0bd65bd5-3bba-4d89-a2a8-7bb5d057244d}",
@@ -17,6 +17,11 @@
 		"scripts": [
 			"background.js"
 		]
+	},
+	"browser_action": {
+		"browser_style": true,
+		"default_icon": "icons/close-stop-32.png",
+		"default_title": "Open tab for Prevent Closing Window"
 	},
 	"permissions": [
 		"menus",
