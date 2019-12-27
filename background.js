@@ -1,11 +1,12 @@
 /* 
   Copyright 2019. Jefferson "jscher2000" Scher. License: MPL-2.0.
-  Revision 0.1 - open pinned tab in window to alert on close
-  Revision 0.2 - bug fix for slow-opening new windows
-  Revision 0.3 - bug fixes
-  Revision 0.4 - bug fixes
-  Revision 0.5 - tab options other than pinned
-  Revision 0.6 - toolbar button to launch a Keep Open page
+  version 0.1 - open pinned tab in window to alert on close
+  version 0.2 - bug fix for slow-opening new windows
+  version 0.3 - bug fixes
+  version 0.4 - bug fixes
+  version 0.5 - tab options other than pinned
+  version 0.6 - toolbar button to launch a Keep Open page
+  version 0.9 - add options panel
 */
 
 /**** Create and populate data structure ****/
@@ -16,7 +17,6 @@ let oPrefs = {
 	addToEvery: false			// whether to add to one window or all windows
 }
 // Update oPrefs from storage TODO need to create options page
-/*
 browser.storage.local.get("prefs").then((results) => {
 	if (results.prefs != undefined){
 		if (JSON.stringify(results.prefs) != '{}'){
@@ -27,7 +27,6 @@ browser.storage.local.get("prefs").then((results) => {
 		}
 	}
 }).catch((err) => {console.log('Error retrieving "prefs" from storage: '+err.message);});
-*/
 
 let koTabs = {					// store tabId's of extension tabs
 	regTabs: [],
@@ -136,11 +135,12 @@ browser.windows.onCreated.addListener((win) => {
 	browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 		console.log('tabs.onUpdated fired');
 		if (changeInfo.status == 'complete'){
-			if (tab.incognito){
+			if (tab.incognito && oPrefs.inPrivate){
 				// add this window to the privWins array
 				privWins.push(tab.windowId);
 				// do we need to add a KO tab?
-				if (oPrefs.addToEvery || koTabs.privTabs.length === 0){
+				if ( (oPrefs.addToEvery && koTabs.privTabs.findIndex( oTab => oTab.win_id === tab.windowId ) === -1 )
+					|| koTabs.privTabs.length === 0 ){
 					browser.tabs.create({
 						url: myPage,
 						pinned: false,
@@ -153,11 +153,12 @@ browser.windows.onCreated.addListener((win) => {
 						});
 					});
 				}
-			} else {
+			} else if (oPrefs.inRegular) {
 				// add this window to the regWins array
 				regWins.push(tab.windowId);
 				// do we need to add a KO tab?
-				if (oPrefs.addToEvery || koTabs.regTabs.length === 0){
+				if ( (oPrefs.addToEvery && koTabs.regTabs.findIndex( oTab => oTab.win_id === tab.windowId ) === -1 )
+					|| koTabs.regTabs.length === 0){
 					browser.tabs.create({
 						url: myPage,
 						pinned: false,
@@ -194,6 +195,22 @@ function handleMessage(request, sender, sendResponse) {
 			if (iTab > -1) koTabs.regTabs.splice(iTab, 1);
 		}
 		console.log(koTabs);
+	}
+	if ("get" in request) {
+		// Send oPrefs to Options page
+		sendResponse({
+			prefs: oPrefs
+		});
+	} 
+	if ("update" in request) {
+		// Receive pref update from Options page, store to oPrefs, and commit to storage
+		var oSettings = request["update"];
+		console.log(oSettings);
+		oPrefs.inRegular = oSettings.inRegular;
+		oPrefs.inPrivate = oSettings.inPrivate;
+		oPrefs.addToEvery = oSettings.addToEvery;
+		browser.storage.local.set({prefs: oPrefs})
+			.catch((err) => {console.log('Error on browser.storage.local.set(): '+err.message);});
 	}
 }
 browser.runtime.onMessage.addListener(handleMessage);
