@@ -1,5 +1,5 @@
 /* 
-  Copyright 2019. Jefferson "jscher2000" Scher. License: MPL-2.0.
+  Copyright 2020. Jefferson "jscher2000" Scher. License: MPL-2.0.
   version 0.1 - open pinned tab in window to alert on close
   version 0.2 - bug fix for slow-opening new windows
   version 0.3 - bug fixes
@@ -7,6 +7,7 @@
   version 0.5 - tab options other than pinned
   version 0.6 - toolbar button to launch a Keep Open page
   version 0.9 - add options panel
+  version 1.0 - various clean-ups
 */
 
 /**** Create and populate data structure ****/
@@ -130,10 +131,10 @@ browser.runtime.onStartup.addListener(initKeepOpen);
 // Listen for window created and update regWins/privWins
 // Create a new pinned tab in another window if applicable and update regTabs/privTabs
 browser.windows.onCreated.addListener((win) => {
-	console.log('Starting windows.onCreated.addListener() for ' + win.id);
+	//console.log('Starting windows.onCreated.addListener() for ' + win.id);
 	// wait for at least one tab to load
 	browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-		console.log('tabs.onUpdated fired');
+		//console.log('tabs.onUpdated fired');
 		if (changeInfo.status == 'complete'){
 			if (tab.incognito && oPrefs.inPrivate){
 				// add this window to the privWins array
@@ -172,7 +173,7 @@ browser.windows.onCreated.addListener((win) => {
 					});
 				}
 			}
-			console.log(koTabs);
+			//console.log(koTabs);
 		}
 	}, {
 		windowId: win.id,
@@ -181,12 +182,28 @@ browser.windows.onCreated.addListener((win) => {
 		]
 	});
 });
+// Remove entry for closed window
+browser.windows.onRemoved.addListener((winId) => {
+	iTab = koTabs.regTabs.findIndex( oTab => oTab.win_id === winId );
+	if (iTab > -1) koTabs.regTabs.splice(iTab, 1);
+	iTab = koTabs.privTabs.findIndex( oTab => oTab.win_id === winId );
+	if (iTab > -1) koTabs.privTabs.splice(iTab, 1);	
+	//console.log(koTabs);
+});
+// Remove entry for closed tab
+browser.tabs.onRemoved.addListener((tabId, removeInfo) => {
+	iTab = koTabs.regTabs.findIndex( oTab => oTab.tab_id === tabId );
+	if (iTab > -1) koTabs.regTabs.splice(iTab, 1);
+	iTab = koTabs.privTabs.findIndex( oTab => oTab.tab_id === tabId );
+	if (iTab > -1) koTabs.privTabs.splice(iTab, 1);	
+	//console.log(koTabs);
+});
 
 // Message handling
 function handleMessage(request, sender, sendResponse) {
 	// handler for extension tab being closed
 	if ('removed' in request) {
-		console.log('Starting handleMessage() for request.removed=' + request.removed);
+		//console.log('Starting handleMessage() for request.removed=' + request.removed);
 		if (request.incog){
 			iTab = koTabs.privTabs.findIndex( oTab => oTab.tab_id === request.removed );
 			if (iTab > -1) koTabs.privTabs.splice(iTab, 1);	
@@ -194,7 +211,7 @@ function handleMessage(request, sender, sendResponse) {
 			iTab = koTabs.regTabs.findIndex( oTab => oTab.tab_id === request.removed );
 			if (iTab > -1) koTabs.regTabs.splice(iTab, 1);
 		}
-		console.log(koTabs);
+		//console.log(koTabs);
 	}
 	if ("get" in request) {
 		// Send oPrefs to Options page
@@ -220,35 +237,46 @@ browser.runtime.onMessage.addListener(handleMessage);
 // Listen for button click and open a tab with the Keep Open page
 browser.browserAction.onClicked.addListener((currTab) => {
 	if (currTab.incognito){
-		// add this window to the privWins array
-		privWins.push(currTab.windowId);
-		// add a KO tab
-		browser.tabs.create({
-			url: myPage,
-			pinned: false,
-			active: true,
-			windowId: currTab.windowId
-		}).then( (tabNew) => {
-			koTabs.privTabs.push({
-				tab_id: tabNew.id,
-				win_id: tabNew.windowId
+		// If a Keep Open page is already open in this window, switch focus to that page
+		iTab = koTabs.privTabs.findIndex( oTab => oTab.win_id === currTab.windowId );
+		if (iTab > -1){
+			browser.tabs.update(koTabs.privTabs[iTab].tab_id, {active: true})
+		} else {
+			// Otherwise, add this window to the privWins array
+			privWins.push(currTab.windowId);
+			// add a KO tab
+			browser.tabs.create({
+				url: myPage,
+				pinned: false,
+				active: true,
+				windowId: currTab.windowId
+			}).then( (tabNew) => {
+				koTabs.privTabs.push({
+					tab_id: tabNew.id,
+					win_id: tabNew.windowId
+				});
 			});
-		});
+		}
 	} else {
-		// add this window to the regWins array
-		regWins.push(currTab.windowId);
-		// add a KO tab
-		browser.tabs.create({
-			url: myPage,
-			pinned: false,
-			active: true,
-			windowId: currTab.windowId
-		}).then((tabNew) => {
-			koTabs.regTabs.push({
-				tab_id: tabNew.id,
-				win_id: tabNew.windowId
+		// If a Keep Open page is already open in this window, switch focus to that page
+		iTab = koTabs.regTabs.findIndex( oTab => oTab.win_id === currTab.windowId );
+		if (iTab > -1){
+			browser.tabs.update(koTabs.regTabs[iTab].tab_id, {active: true})
+		} else {
+			// add this window to the regWins array
+			regWins.push(currTab.windowId);
+			// add a KO tab
+			browser.tabs.create({
+				url: myPage,
+				pinned: false,
+				active: true,
+				windowId: currTab.windowId
+			}).then((tabNew) => {
+				koTabs.regTabs.push({
+					tab_id: tabNew.id,
+					win_id: tabNew.windowId
+				});
 			});
-		});
+		}
 	}
-	console.log(koTabs);
 });

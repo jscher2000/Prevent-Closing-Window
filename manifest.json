@@ -2,7 +2,7 @@
 	"manifest_version": 2,
 	"name": "Prevent Closing Window",
 	"description": "Displays the \"Leave Page\" prompt to avoid accidentally closing the current window.",
-	"version": "0.9",
+	"version": "1.0",
 	"applications":{
 		"gecko": {
 			"id": "{0bd65bd5-3bba-4d89-a2a8-7bb5d057244d}",
